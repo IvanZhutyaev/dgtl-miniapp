@@ -1,0 +1,23 @@
+{
+  "scripts": {
+    "start": "next start",
+    "build": "next build",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd server && nodemon index.js",
+    "dev:frontend": "cd client && npx next dev",
+    "dev:bot": "cd bot && nodemon bot.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.4"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "name": "gtl-miniapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

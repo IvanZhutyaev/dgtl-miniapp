@@ -6,6 +6,7 @@ import { GAME_DURATION, MINERALS } from "../game/constants/gameData";
 import { preloadImage } from "../lib/preloadImage";
 import { useSession } from "next-auth/react";
 import axios from "axios";
+import { LEVELS } from "../game/constants/levels";
 
 interface BoostCard {
   id: string;
@@ -101,7 +102,7 @@ const GamePage: React.FC = () => {
       onScoreUpdate: setScore,
       onTimeLeftUpdate: setTimeLeft,
       onGameOver: handleGameOver,
-    });
+    }, LEVELS[0]);
 
     game.startGame();
     gameRef.current = game;

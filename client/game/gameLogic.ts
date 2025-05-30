@@ -1,6 +1,8 @@
 import { ImageEntity } from "./entities/ImageEntity";
-import { MINERALS, GAME_DURATION, SPAWN_INTERVAL, BASE_HEIGHT, MIN_SPEED, MAX_SPEED } from "./constants/gameData";
+import { MINERALS as DEFAULT_MINERALS, GAME_DURATION as DEFAULT_GAME_DURATION, SPAWN_INTERVAL as DEFAULT_SPAWN_INTERVAL, BASE_HEIGHT, MIN_SPEED as DEFAULT_MIN_SPEED, MAX_SPEED as DEFAULT_MAX_SPEED } from "./constants/gameData";
 import { getRandomMineral } from "./utils/helper";
+import { LevelConfig } from "./constants/levels";
+import { MINERALS } from "./constants/minerals";
 
 interface CollectedMinerals {
     [imageSrc: string]: {
@@ -27,20 +29,26 @@ export class Game {
 
     private entities: ImageEntity[] = [];
     private score: number = 0;
-    private gameTime: number = GAME_DURATION;
-    private spawnTimer: NodeJS.Timeout | null = null;
-    private gameTimer: NodeJS.Timeout | null = null;
+    private gameTime: number;
+    private spawnTimer: ReturnType<typeof setInterval> | null = null;
+    private gameTimer: ReturnType<typeof setInterval> | null = null;
     private lastUpdateTime: number = 0;
     private scoreMultiplier: number = 1;
     private doublePointsActive: boolean = false;
     private collectedMinerals: CollectedMinerals = {};
+
+    private level?: LevelConfig;
+    private mineralsPool: any[];
+    private spawnInterval: number;
+    private minSpeed: number;
+    private maxSpeed: number;
 
     // External callbacks for game events
     private onScoreUpdate?: (score: number) => void;
     private onTimeLeftUpdate?: (timeLeft: number) => void;
     private onGameOver?: (totalCollectedValue: number, collectedMinerals: CollectedMinerals) => void;
 
-    constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks = {}) {
+    constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks = {}, level?: LevelConfig) {
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d")!;
         this.windowWidth = window.innerWidth;
@@ -49,6 +57,18 @@ export class Game {
         this.onScoreUpdate = callbacks.onScoreUpdate;
         this.onTimeLeftUpdate = callbacks.onTimeLeftUpdate;
         this.onGameOver = callbacks.onGameOver;
+
+        this.level = level;
+        this.mineralsPool = level
+            ? level.minerals.map(symbol => {
+                const found = MINERALS.find((m: any) => m.symbol === symbol);
+                return found || DEFAULT_MINERALS[0];
+              })
+            : DEFAULT_MINERALS;
+        this.spawnInterval = level ? level.spawnInterval : DEFAULT_SPAWN_INTERVAL;
+        this.minSpeed = level ? level.minSpeed : DEFAULT_MIN_SPEED;
+        this.maxSpeed = level ? level.maxSpeed : DEFAULT_MAX_SPEED;
+        this.gameTime = level ? level.duration : DEFAULT_GAME_DURATION;
 
         // Setup offscreen rendering for performance
         this.offscreenCanvas = document.createElement("canvas");
@@ -64,7 +84,7 @@ export class Game {
      * Initializes the main canvas properties such as size and background.
      */
     private setupCanvas() {
-        this.canvas.style.background = "#000";
+        this.canvas.style.background = this.level ? this.level.background : "#000";
         this.canvas.width = this.windowWidth;
         this.canvas.height = this.windowHeight;
     }
@@ -129,11 +149,12 @@ export class Game {
      */
     private spawnEntity() {
         const randomX = Math.random() * (this.windowWidth - 50);
-        const speedFactor = this.windowHeight / BASE_HEIGHT; 
-        const randomSpeed = (Math.random() * (MAX_SPEED - MIN_SPEED) + MIN_SPEED) * speedFactor; 
-        const mineral = getRandomMineral(MINERALS);
-
-        const entity = new ImageEntity(randomX, -50, mineral.src, randomSpeed, mineral.points);
+        const speedFactor = this.windowHeight / BASE_HEIGHT;
+        const randomSpeed = (Math.random() * (this.maxSpeed - this.minSpeed) + this.minSpeed) * speedFactor;
+        const mineral = getRandomMineral(this.mineralsPool);
+        let imageSrc = ("image" in mineral && typeof mineral.image === "string") ? mineral.image : mineral.src;
+        if (typeof imageSrc !== "string") imageSrc = "";
+        const entity = new ImageEntity(randomX, -50, imageSrc, randomSpeed, mineral.points);
         this.entities.push(entity);
     }
 
@@ -170,25 +191,17 @@ export class Game {
      * Starts the game by setting up timers and initial conditions.
      */
     public startGame() {
-        this.lastUpdateTime = performance.now(); 
-
-        // Spawn entities at a fixed interval
-        this.spawnTimer = setInterval(() => this.spawnEntity(), SPAWN_INTERVAL);
-
-        // Decrement the game time every second
+        this.lastUpdateTime = performance.now();
+        this.spawnTimer = setInterval(() => this.spawnEntity(), this.spawnInterval);
         this.gameTimer = setInterval(() => {
             this.gameTime -= 1;
             if (this.onTimeLeftUpdate) {
                 this.onTimeLeftUpdate(this.gameTime);
             }
-            
-            // When time hits zero, stop spawning new entities
             if (this.gameTime <= 0) {
                 this.clearTimers();
             }
         }, 1000);
-
-        // Begin the entity update loop
         this.updateEntities(this.lastUpdateTime);
     }
 
@@ -258,7 +271,7 @@ export class Game {
         }
         
         // Spawn entities twice as fast
-        const fastSpawnInterval = SPAWN_INTERVAL / 2;
+        const fastSpawnInterval = this.spawnInterval / 2;
         this.spawnTimer = setInterval(() => this.spawnEntity(), fastSpawnInterval);
         
         // After 5 seconds, revert to normal spawn rate
@@ -266,7 +279,7 @@ export class Game {
             if (this.spawnTimer) {
                 clearInterval(this.spawnTimer);
             }
-            this.spawnTimer = setInterval(() => this.spawnEntity(), SPAWN_INTERVAL);
+            this.spawnTimer = setInterval(() => this.spawnEntity(), this.spawnInterval);
         }, 5000);
     }
       

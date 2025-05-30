@@ -30,7 +30,21 @@ const Index = () => {
       try {
         const res = await fetch('/api/leveldata');
         if (!res.ok) throw new Error('Failed to fetch levels');
-        const data = await res.json();
+        let data = await res.json();
+        // Аккуратно дополняем до 13 уровней
+        if (data.length < 13) {
+          const filled = [...data];
+          for (let i = data.length; i < 13; i++) {
+            filled.push({
+              name: `Level ${i+1}`,
+              badges: [],
+              backgroundUrl: '',
+              order: i+1,
+              availability: false
+            });
+          }
+          data = filled;
+        }
         setLevels(data);
       } catch (error) {
         console.error('Error fetching levels:', error);
@@ -124,7 +138,7 @@ const Index = () => {
                         <h2 className="text-lg font-bold text-white">{level.name}</h2>
                         {/* If you have tickets or other data, show them here */}
                       </div>
-                      <Link href="/game">
+                      <Link href={`/game?level=${level.order}`}>
                         <button className="btn btn-md border-2 border-accent shadow-glow">Play</button>
                       </Link>
                     </div>

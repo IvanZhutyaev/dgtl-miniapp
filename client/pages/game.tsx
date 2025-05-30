@@ -7,6 +7,7 @@ import { preloadImage } from "../lib/preloadImage";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { LEVELS } from "../game/constants/levels";
+import { useRouter } from "next/router";
 
 interface BoostCard {
   id: string;
@@ -21,6 +22,7 @@ const BOOST_COOLDOWN_DURATION = 5; // Cooldown in seconds
 
 const GamePage: React.FC = () => {
   const { data: session } = useSession();
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<Game | null>(null);
 
@@ -98,11 +100,21 @@ const GamePage: React.FC = () => {
   const initializeGame = () => {
     if (!canvasRef.current) return;
 
+    // Получаем номер уровня из query
+    const levelParam = router.query.level;
+    let levelConfig = LEVELS[0];
+    if (typeof levelParam === "string") {
+      const idx = parseInt(levelParam, 10) - 1;
+      if (!isNaN(idx) && idx >= 0 && idx < LEVELS.length) {
+        levelConfig = LEVELS[idx];
+      }
+    }
+
     const game = new Game(canvasRef.current, {
       onScoreUpdate: setScore,
       onTimeLeftUpdate: setTimeLeft,
       onGameOver: handleGameOver,
-    }, LEVELS[0]);
+    }, levelConfig);
 
     game.startGame();
     gameRef.current = game;

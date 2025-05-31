@@ -38,6 +38,7 @@ const GamePage: React.FC = () => {
   const [cooldowns, setCooldowns] = useState<{ [key: string]: number | null }>({});
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isImagesLoading, setIsImagesLoading] = useState(true);
+  const [currentLevel, setCurrentLevel] = useState(LEVELS[0]);
 
   const usedBoostsRef = useRef<UserBoosts>({}); // Track boosts used during the game
 
@@ -107,6 +108,7 @@ const GamePage: React.FC = () => {
       const idx = parseInt(levelParam, 10) - 1;
       if (!isNaN(idx) && idx >= 0 && idx < LEVELS.length) {
         levelConfig = LEVELS[idx];
+        setCurrentLevel(levelConfig);
       }
     }
 
@@ -197,34 +199,66 @@ const GamePage: React.FC = () => {
 
   const isLoading = isDataLoading || isImagesLoading;
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-screen bg-base-100">
+        <div className="loading loading-spinner loading-lg mb-4"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-screen overflow-hidden touch-none relative">
-      <canvas ref={canvasRef} className="block w-full h-full"></canvas>
+    <div 
+      className="card bg-neutral text-white overflow-hidden fixed inset-0 w-full h-full select-none touch-none"
+      style={{
+        background: `linear-gradient(to bottom, ${currentLevel.colorScheme.primary}, ${currentLevel.colorScheme.secondary})`
+      }}
+    >
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 w-full h-full opacity-50"
+        style={{
+          backgroundImage: `url(${currentLevel.backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(2px)'
+        }}
+      />
 
-      {isLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-base-100 z-50">
-          <div className="loading loading-spinner loading-lg mb-4"></div>
-        </div>
-      )}
+      {/* Game Canvas */}
+      <canvas
+        ref={canvasRef}
+        className="relative z-10 w-full h-full"
+        style={{
+          background: 'transparent'
+        }}
+      />
 
-      {!isLoading && !gameOver && (
-        <GameHUD
-          score={score}
-          timeLeft={timeLeft}
-          boostCards={boostCards.map((boost) => ({
-            ...boost,
-            quantity: userBoosts[boost.id],
-          }))}
-          onBoostClick={handleBoostClick}
-          cooldowns={cooldowns}
-        />
-      )}
+      {/* Game HUD */}
+      <GameHUD
+        score={score}
+        timeLeft={timeLeft}
+        boostCards={boostCards.map((boost) => ({
+          ...boost,
+          quantity: userBoosts[boost.id],
+        }))}
+        onBoostClick={handleBoostClick}
+        cooldowns={cooldowns}
+        style={{
+          color: currentLevel.colorScheme.accent
+        }}
+      />
 
+      {/* Game Over Modal */}
       {gameOver && (
         <GameOverModal
           totalCollectedValue={totalCollectedValue}
           collectedMinerals={collectedMinerals}
-          onGoToMainMenu={() => (window.location.href = "/")}
+          onGoToMainMenu={() => router.push('/')}
+          style={{
+            backgroundColor: currentLevel.colorScheme.secondary,
+            color: currentLevel.colorScheme.accent
+          }}
         />
       )}
     </div>

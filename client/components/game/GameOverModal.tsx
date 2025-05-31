@@ -2,40 +2,52 @@ import React from 'react';
 
 interface GameOverModalProps {
   totalCollectedValue: number;
-  collectedMinerals: Record<string, { count: number; value: number }>;
+  collectedMinerals: Record<string, number>;
   onGoToMainMenu: () => void;
+  style?: React.CSSProperties;
 }
 
 const GameOverModal: React.FC<GameOverModalProps> = ({
   totalCollectedValue,
   collectedMinerals,
   onGoToMainMenu,
-}) => (
-  <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-30 p-6">
-    <h2 className="text-2xl font-bold">Insane!</h2>
-    <h2 className="text-2xl mb-5 font-bold">How did you get so much?</h2>
-    <h1 className="text-4xl font-bold mb-4">{totalCollectedValue} GTL</h1>
-    <p className="mb-4">Earned</p>
+  style
+}) => {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div 
+        className="modal-box max-w-2xl w-full mx-4"
+        style={style}
+      >
+        <h3 className="font-bold text-2xl mb-4">Game Over!</h3>
+        
+        <div className="mb-4">
+          <p className="text-xl">Total Value: {totalCollectedValue}</p>
+        </div>
 
-    <div className="card bg-neutral grid grid-cols-3 gap-2 mb-6 p-3">
-      {Object.entries(collectedMinerals).map(([image, { count, value }]) => (
-        <div key={image} className="flex flex-col items-center justify-center bg-secondary p-2 rounded-xl">
-          <img src={image} alt="" className="w-10 h-10" />
-          <div className="text-xs">
-            <p>Collected: {count}</p>
-            <p>Value: {count * value} GTL</p>
+        <div className="mb-4">
+          <h4 className="font-bold text-lg mb-2">Collected Minerals:</h4>
+          <div className="grid grid-cols-4 gap-2">
+            {Object.entries(collectedMinerals).map(([mineral, count]) => (
+              <div key={mineral} className="flex items-center justify-between p-2 bg-base-200 rounded">
+                <span>{mineral}</span>
+                <span className="font-bold">{count}</span>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
-    </div>
 
-    <button
-      className="btn btn-base-100 border-2 border-accent shadow-glow text-lg"
-      onClick={onGoToMainMenu}
-    >
-      Go to Main Menu
-    </button>
-  </div>
-);
+        <div className="modal-action">
+          <button 
+            className="btn btn-primary"
+            onClick={onGoToMainMenu}
+          >
+            Back to Main Menu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default GameOverModal;

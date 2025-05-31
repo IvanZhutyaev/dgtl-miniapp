@@ -12,17 +12,18 @@ interface GameHUDProps {
   boostCards: IActiveBoost[];
   onBoostClick: (boostId: string) => void;
   cooldowns: { [key: string]: number | null };
+  style?: React.CSSProperties;
 }
 
-const GameHUD: React.FC<GameHUDProps> = ({ score, timeLeft, boostCards, onBoostClick, cooldowns }) => {
+const GameHUD: React.FC<GameHUDProps> = ({ score, timeLeft, boostCards, onBoostClick, cooldowns, style }) => {
   return (
-    <>
-      <h1 className="absolute top-4 left-4 text-2xl z-20 pointer-events-none">
+    <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center" style={style}>
+      <div className="text-2xl font-bold">
         Score: {score}
-      </h1>
-      <h2 className="absolute top-4 right-4 text-2xl z-20 pointer-events-none">
-        Time Left: {timeLeft}s
-      </h2>
+      </div>
+      <div className="text-2xl font-bold">
+        Time: {timeLeft}s
+      </div>
 
       {/* Boosts Display */}
       <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2">
@@ -55,7 +56,7 @@ const GameHUD: React.FC<GameHUDProps> = ({ score, timeLeft, boostCards, onBoostC
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 };
 

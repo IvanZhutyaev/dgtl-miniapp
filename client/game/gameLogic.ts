@@ -122,23 +122,29 @@ export class Game {
      * Applies any active multipliers and updates score & collectedMinerals.
      */
     private collectEntity(entity: ImageEntity) {
-        const pointsEarned = entity.points * this.scoreMultiplier;
+        // Apply collection effects
+        entity.collect();
+        
+        // Calculate points with dynamic multipliers
+        const basePoints = entity.points;
+        const comboMultiplier = this.calculateComboMultiplier();
+        const levelMultiplier = this.level ? 1 + (this.level.id * 0.1) : 1;
+        const pointsEarned = basePoints * this.scoreMultiplier * comboMultiplier * levelMultiplier;
+        
         this.score += pointsEarned;
-    
+
         const imgSrc = entity.image.src;
         if (!this.collectedMinerals[imgSrc]) {
-            // Initialize the entry with count, value, and totalPoints
             this.collectedMinerals[imgSrc] = {
                 count: 0,
-                value: entity.points, // Set the base value here
+                value: entity.points,
                 totalPoints: 0,
             };
         }
-    
-        // Update the entry
+
         this.collectedMinerals[imgSrc].count += 1;
         this.collectedMinerals[imgSrc].totalPoints += pointsEarned;
-    
+
         if (this.onScoreUpdate) {
             this.onScoreUpdate(this.score);
         }
@@ -150,12 +156,54 @@ export class Game {
     private spawnEntity() {
         const randomX = Math.random() * (this.windowWidth - 50);
         const speedFactor = this.windowHeight / BASE_HEIGHT;
-        const randomSpeed = (Math.random() * (this.maxSpeed - this.minSpeed) + this.minSpeed) * speedFactor;
-        const mineral = getRandomMineral(this.mineralsPool);
+        
+        // Calculate dynamic speed based on level and game progress
+        const progressFactor = 1 - (this.gameTime / (this.level?.duration || DEFAULT_GAME_DURATION));
+        const dynamicMinSpeed = this.minSpeed * (1 + progressFactor * 0.5);
+        const dynamicMaxSpeed = this.maxSpeed * (1 + progressFactor * 0.3);
+        
+        const randomSpeed = (Math.random() * (dynamicMaxSpeed - dynamicMinSpeed) + dynamicMinSpeed) * speedFactor;
+        
+        // Weighted random selection for minerals
+        const mineral = this.getWeightedRandomMineral();
         let imageSrc = ("image" in mineral && typeof mineral.image === "string") ? mineral.image : mineral.src;
         if (typeof imageSrc !== "string") imageSrc = "";
+        
         const entity = new ImageEntity(randomX, -50, imageSrc, randomSpeed, mineral.points);
         this.entities.push(entity);
+    }
+
+    private getWeightedRandomMineral() {
+        // Calculate weights based on mineral rarity and level
+        const weights = this.mineralsPool.map(mineral => {
+            const baseWeight = 1;
+            const rarityBonus = mineral.points * 0.5; // Rarer minerals have higher points
+            const levelBonus = this.level ? this.level.id * 0.1 : 0; // Higher levels increase rare mineral chances
+            return baseWeight + rarityBonus + levelBonus;
+        });
+
+        // Normalize weights
+        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+        const normalizedWeights = weights.map(weight => weight / totalWeight);
+
+        // Select mineral based on weights
+        const random = Math.random();
+        let cumulativeWeight = 0;
+        
+        for (let i = 0; i < this.mineralsPool.length; i++) {
+            cumulativeWeight += normalizedWeights[i];
+            if (random <= cumulativeWeight) {
+                return this.mineralsPool[i];
+            }
+        }
+
+        return this.mineralsPool[0]; // Fallback
+    }
+
+    private calculateComboMultiplier(): number {
+        // Implement combo system based on recent collections
+        const recentCollections = this.entities.filter(e => e.isCollected).length;
+        return 1 + (recentCollections * 0.1); // 10% bonus per combo
     }
 
     /**

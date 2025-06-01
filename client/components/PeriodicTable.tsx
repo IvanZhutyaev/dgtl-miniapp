@@ -1,25 +1,26 @@
-import React from 'react';
-import { MINERALS } from '../game/constants/minerals';
+import * as React from 'react';
+import { MINERALS, MineralInfo } from '../game/constants/minerals';
 
 interface PeriodicTableProps {
   collectedMinerals: string[]; // массив символов собранных элементов
 }
 
-const PeriodicTable: React.FC<PeriodicTableProps> = ({ collectedMinerals }) => {
-  // Группируем элементы по периодам
-  const periods = Array.from({ length: 7 }, (_, i) => i + 1);
-  
+const PeriodicTable: React.FC<PeriodicTableProps> = ({ collectedMinerals }: PeriodicTableProps) => {
+  // Определяем максимальный период
+  const maxPeriod: number = Math.max(...MINERALS.map((m: MineralInfo) => m.period));
+  const periods: number[] = Array.from({ length: maxPeriod }, (_, i) => i + 1);
+
   return (
     <div className="p-4 overflow-auto">
       <div className="text-center mb-4">
         <h1 className="text-2xl font-bold text-white">Периодическая таблица</h1>
         <p className="text-sm text-gray-300">Собранные элементы: {collectedMinerals.length} из {MINERALS.length}</p>
       </div>
-      
+      {/* 18 колонок по стандарту таблицы Менделеева */}
       <div className="grid grid-cols-18 gap-1">
-        {periods.map((period) => (
+        {periods.map((period: number) => (
           <div key={period} className="flex gap-1">
-            {MINERALS.filter(m => m.period === period).map((mineral) => {
+            {MINERALS.filter((m: MineralInfo) => m.period === period).sort((a: MineralInfo, b: MineralInfo) => a.atomicNumber - b.atomicNumber).map((mineral: MineralInfo) => {
               const isCollected = collectedMinerals.includes(mineral.symbol);
               return (
                 <div

@@ -7,6 +7,14 @@ const handleStartCommand = async (bot, msg) => {
   const lastName = msg.from.last_name || '';
   const username = msg.from.username || '';
 
+  console.log('Processing start command for user:', {
+    chatId,
+    telegramId,
+    firstName,
+    lastName,
+    username
+  });
+
   const userData = {
     telegramId,
     firstName,
@@ -15,8 +23,12 @@ const handleStartCommand = async (bot, msg) => {
   };
 
   try {
+    console.log('Attempting to send user data to server...');
     const response = await sendUserData(userData);
+    console.log('Server response:', response);
+    
     if (response.success) {
+      console.log('Successfully synced user data');
       bot.sendMessage(chatId, 'Welcome to DGTL P2E game! Your account has been synced.', {
         reply_markup: {
           inline_keyboard: [
@@ -25,9 +37,11 @@ const handleStartCommand = async (bot, msg) => {
         }
       });
     } else {
+      console.error('Failed to sync account:', response);
       bot.sendMessage(chatId, 'Failed to sync account. Please try again later.');
     }
   } catch (error) {
+    console.error('Error in handleStartCommand:', error);
     bot.sendMessage(chatId, 'An error occurred. Please try again later.');
   }
 };

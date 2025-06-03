@@ -1,4 +1,5 @@
 const { sendUserData } = require('../services/apiService');
+const { WEB_APP_URL } = require('../config/botConfig');
 
 const handleStartCommand = async (bot, msg) => {
   const chatId = msg.chat.id;
@@ -35,9 +36,11 @@ const handleStartCommand = async (bot, msg) => {
       
       const keyboard = {
         inline_keyboard: [
-          [{ text: 'Играть!', web_app: { url: process.env.WEB_APP_URL } }]
+          [{ text: 'Играть!', web_app: { url: WEB_APP_URL } }]
         ]
       };
+
+      console.log('Using WEB_APP_URL:', WEB_APP_URL);
 
       await bot.sendMessage(
         chatId, 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { IUser } from '../models/User';
 import { ILevel } from '../models/Level';
+import ChemicalBadge from '../components/ChemicalBadge';
 
 const Index = () => {
   const { data: session, status } = useSession();
@@ -122,13 +123,13 @@ const Index = () => {
                     {/* Badges */}
                     <div className="flex absolute top-2 left-2 flex-wrap gap-2 z-10">
                       {level.badges.map((badge, i) => (
-                        <div className="badge badge-outline" key={i}>{badge}</div>
+                        <ChemicalBadge key={i} element={badge} />
                       ))}
                     </div>
                     
                     {/* Level background image */}
                     <img
-                      src={level.backgroundUrl}
+                      src={level.backgroundUrl || '/default-level-bg.jpg'}
                       alt={level.name}
                       className="h-[150px] w-full object-cover"
                     />
@@ -136,7 +137,6 @@ const Index = () => {
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent flex items-center justify-between">
                       <div>
                         <h2 className="text-lg font-bold text-white">{level.name}</h2>
-                        {/* If you have tickets or other data, show them here */}
                       </div>
                       <Link href={`/game?level=${level.order}`}>
                         <button className="btn btn-md border-2 border-accent shadow-glow">Play</button>

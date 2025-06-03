@@ -1,16 +1,39 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import Level from '../../models/Level';
-import { connectToDatabase } from '@/lib/mongodb';
+import axios from 'axios';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Ensure that Mongoose is connected by calling the DB connection function.
-    await connectToDatabase();
+    // Проверяем аутентификацию
+    const session = await getServerSession(req, res, authOptions);
+    if (!session) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
-    const levels = await Level.find({}).sort({ order: 1 }).lean();
-    return res.status(200).json(levels);
+    // Проверяем наличие SERVER_URL
+    const serverUrl = process.env.SERVER_URL;
+    if (!serverUrl) {
+      console.error('SERVER_URL is not defined');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+
+    // Получаем данные об уровнях
+    const response = await axios.get(`${serverUrl}/api/levels`);
+    
+    // Если нет данных, возвращаем пустой массив
+    if (!response.data) {
+      return res.status(200).json([]);
+    }
+
+    return res.status(200).json(response.data);
   } catch (error) {
     console.error('Error fetching levels:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    // Более детальная информация об ошибке
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return res.status(500).json({ 
+      message: 'Failed to fetch levels',
+      error: errorMessage
+    });
   }
 }

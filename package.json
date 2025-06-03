@@ -1,23 +1,31 @@
 {
-  "scripts": {
-    "start": "next start",
-    "build": "next build",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd server && nodemon index.js",
-    "dev:frontend": "cd client && npx next dev",
-    "dev:bot": "cd bot && nodemon bot.js"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "nodemon": "^3.1.4"
-  },
-  "dependencies": {
-    "node-telegram-bot-api": "^0.66.0"
-  },
-  "name": "gtl-miniapp",
+  "name": "dgtl-miniapp",
   "version": "1.0.0",
+  "description": "Digital P2E Game",
   "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\" \"npm run dev:bot\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && PORT=3000 npm run dev",
+    "dev:bot": "cd bot && npm run dev",
+    "tunnel": "ngrok http 3000",
+    "install:all": "concurrently \"cd server && npm install\" \"cd client && npm install\" \"cd bot && npm install\""
+  },
+  "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IvanZhutyaev/dgtl-miniapp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/IvanZhutyaev/dgtl-miniapp/issues"
+  },
+  "homepage": "https://github.com/IvanZhutyaev/dgtl-miniapp#readme"
 }

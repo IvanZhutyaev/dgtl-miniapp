@@ -1,14 +1,14 @@
 const axios = require('axios');
-const { serverUrl } = require('../config/botConfig');
+const { SERVER_URL } = require('../config/botConfig');
 
 const sendUserData = async (userData) => {
   console.log('Sending user data to server:', {
-    url: `${serverUrl}/api/users/sync`,
+    url: `${SERVER_URL}/api/users/sync`,
     userData
   });
 
   try {
-    const response = await axios.post(`${serverUrl}/api/users/sync`, userData);
+    const response = await axios.post(`${SERVER_URL}/api/users/sync`, userData);
     console.log('Server response received:', response.data);
     return response.data;
   } catch (error) {

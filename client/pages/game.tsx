@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import axios from "axios";
 import { LEVELS } from "../game/constants/levels";
 import { useRouter } from "next/router";
+import { toast } from "react-hot-toast";
 
 interface BoostCard {
   id: string;
@@ -131,7 +132,21 @@ const GamePage: React.FC = () => {
     setGameOver(true);
 
     try {
+      // Обновляем игровые данные
       await updateGameData(collectedValue, usedBoostsRef.current);
+      
+      // Проверяем возможность разблокировки следующего уровня
+      const levelId = router.query.level;
+      if (typeof levelId === 'string') {
+        const response = await axios.post(`/api/levels/check-next/${levelId}`, {
+          score: collectedValue
+        });
+        
+        if (response.data.unlocked) {
+          // Показываем уведомление о разблокировке нового уровня
+          toast.success(`Поздравляем! Вы разблокировали уровень ${response.data.level.name}!`);
+        }
+      }
     } catch (error) {
       console.error("Failed to update game data:", error);
     }

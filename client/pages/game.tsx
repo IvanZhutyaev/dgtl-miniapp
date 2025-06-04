@@ -81,20 +81,33 @@ const GamePage: React.FC = () => {
    */
   const updateGameData = useCallback(async (
     collectedValue: number,
-    usedBoosts: Record<string, number>
+    usedBoosts: Record<string, number>,
+    mineralsForApi?: CollectedGameLogicState
   ) => {
+    let apiFormattedMinerals: { [symbol: string]: number } = {};
+    if (mineralsForApi) {
+      for (const symbol in mineralsForApi) {
+        if (Object.prototype.hasOwnProperty.call(mineralsForApi, symbol) && mineralsForApi[symbol] && mineralsForApi[symbol].count > 0) {
+          apiFormattedMinerals[symbol] = mineralsForApi[symbol].count;
+        }
+      }
+    }
+
+    const payload = {
+      score: collectedValue,
+      boostsUsed: usedBoosts,
+      collectedMineralsInGame: apiFormattedMinerals,
+    };
+
     try {
-      const response = await axios.post("/api/updateCoins", {
-        amount: collectedValue,
-        boostsUsed: usedBoosts,
-      });
-      console.log("Game data updated successfully:", response.data);
+      const response = await axios.post("/api/updateCoins", payload);
+      console.log("Данные игры успешно обновлены (из updateGameData):", response.data);
       return response.data;
     } catch (error) {
-      console.error("Error updating game data:", error);
+      console.error("Ошибка при обновлении данных игры в updateGameData:", error);
       throw error;
     }
-  }, []); // Added useCallback with empty dependency array
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,14 +158,13 @@ const GamePage: React.FC = () => {
     collectedValue: number,
     mineralsFromGame: CollectedGameLogicState
   ) => {
-    console.log("[GamePage Debug] HandleGameOver called with value:", collectedValue);
     setTotalCollectedValue(collectedValue); 
     setFinalDetailedCollectedMinerals(mineralsFromGame);
     setFinalScore(collectedValue); 
     setGameOver(true);
 
     try {
-      await updateGameData(collectedValue, usedBoostsRef.current);
+      await updateGameData(collectedValue, usedBoostsRef.current, mineralsFromGame);
       
       const levelIdParam = router.query.level; 
       if (typeof levelIdParam === 'string' && currentLevel) { 
@@ -215,21 +227,11 @@ const GamePage: React.FC = () => {
   // Effect to initialize or re-initialize the game when dependencies change
   useEffect(() => {
     if (currentLevel && !isDataLoading && !isImagesLoading && !gameOver && canvasRef.current) {
-      console.log("[GamePage Debug] All conditions met. Calling initializeGame.");
       initializeGame();
-    } else {
-      console.log("[GamePage Debug] Conditions for game initialization NOT met:", {
-          hasCurrentLevel: !!currentLevel,
-          isDataLoaded: !isDataLoading,
-          isImagesLoaded: !isImagesLoading,
-          isNotGameOver: !gameOver,
-          hasCanvas: !!canvasRef.current,
-      });
     }
 
     return () => {
       if (gameRef.current) {
-        console.log("[GamePage Debug] Cleaning up game instance on effect cleanup.");
         // gameRef.current.clearTimers(); // TODO: Expose a public method in Game class for cleanup
       }
     };
@@ -283,21 +285,17 @@ const GamePage: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("[GamePage Debug] Router Ready:", router.isReady);
     if (router.isReady) {
       const levelIdParam = router.query.level;
-      console.log("[GamePage Debug] router.query.level (levelIdParam):", levelIdParam);
 
       if (typeof levelIdParam === "string") {
         const parsedLevelId = parseInt(levelIdParam, 10);
-        console.log("[GamePage Debug] Parsed levelId:", parsedLevelId);
 
         if (!isNaN(parsedLevelId) && parsedLevelId > 0) {
           const foundLevel = LEVELS.find(l => l.id === parsedLevelId);
           if (foundLevel) {
-            console.log("[GamePage Debug] Found levelConfig:", foundLevel);
             setCurrentLevel(foundLevel);
-            setTimeLeft(foundLevel.duration); // Initialize timeLeft here
+            setTimeLeft(foundLevel.duration); 
           } else {
             console.error("[GamePage Debug] Level config not found for ID:", parsedLevelId);
             setCurrentLevel(null);
@@ -309,12 +307,8 @@ const GamePage: React.FC = () => {
           toast.error("Invalid level identifier in URL.");
         }
       } else if (levelIdParam === undefined) {
-        // This case means the query param is not yet available or not provided.
-        // We don't set currentLevel to null here, as we might still be waiting.
-        // The rendering logic will show a loading state.
         console.warn("[GamePage Debug] levelIdParam is undefined. Waiting for router or param missing.");
       } else {
-        // Handle cases where levelIdParam is an array of strings or other unexpected type
         console.error("[GamePage Debug] levelIdParam is not a string or undefined:", levelIdParam);
         setCurrentLevel(null);
         toast.error("Invalid level parameter type in URL.");

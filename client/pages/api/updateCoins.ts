@@ -15,100 +15,158 @@ interface CollectedMineralsInGame {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log("[API updateCoins] Received request"); // Оставляем
   const session = await getServerSession(req, res, authOptions);
 
   if (!session?.user?.telegramId) {
+    console.error("[API updateCoins] Unauthorized: No session or telegramId"); // Оставляем
     return res.status(401).json({ error: "Unauthorized" });
+  }
+  // Удаляем: console.log("[API updateCoins] Session telegramId:", session.user.telegramId);
+
+  // Преобразуем telegramId из сессии в число
+  const telegramIdNum = parseInt(session.user.telegramId, 10);
+  if (isNaN(telegramIdNum)) {
+    console.error("[API updateCoins] Invalid telegramId in session:", session.user.telegramId);
+    return res.status(400).json({ error: "Invalid user identifier" });
   }
 
   if (req.method !== "POST") {
+    console.error("[API updateCoins] Method Not Allowed:", req.method); // Оставляем (изменено с warn на error ранее)
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
+  // Удаляем: console.log("[API updateCoins] Request body:", JSON.stringify(req.body, null, 2));
+
   const { 
-    amount, 
+    score, 
     boostsUsed, 
     collectedMineralsInGame 
-  }: { 
-    amount: number; 
-    boostsUsed: BoostUsage; 
-    collectedMineralsInGame?: CollectedMineralsInGame; // <-- Новое поле
   } = req.body;
 
-  // Validate input
-  if (
-    typeof amount !== "number" ||
-    amount < 0 ||
-    typeof boostsUsed !== "object" ||
-    !boostsUsed ||
-    !Object.values(boostsUsed).every((v) => typeof v === "number" && v >= 0) ||
-    // Валидация для collectedMineralsInGame (если передано)
-    (collectedMineralsInGame && 
-      (typeof collectedMineralsInGame !== "object" || 
-       !Object.values(collectedMineralsInGame).every(v => typeof v === "number" && v >= 0)))
-  ) {
-    return res.status(400).json({ message: "Invalid input" });
+  // Удаляем: console.log("[API updateCoins] Parsed from body - score:", score, "boostsUsed:", boostsUsed, "collectedMineralsInGame:", collectedMineralsInGame);
+
+  if (typeof score !== "number" || score < 0) {
+    console.error("[API updateCoins] Invalid input: score is missing or invalid.", { score }); // Оставляем
+    return res.status(400).json({ error: "Invalid input: score must be a positive number." });
   }
 
+  if (typeof boostsUsed !== "object" || !boostsUsed || !Object.values(boostsUsed).every((v) => typeof v === "number" && v >= 0)) {
+    console.error("[API updateCoins] Invalid input: boostsUsed is not an object or contains invalid values.", { boostsUsed }); // Оставляем: Ошибка валидации
+    return res.status(400).json({ error: "Invalid input: boostsUsed must be a non-negative object." });
+  }
+
+  if (collectedMineralsInGame && (typeof collectedMineralsInGame !== "object" || !Object.values(collectedMineralsInGame).every(v => typeof v === "number" && v >= 0))) {
+    console.error("[API updateCoins] Invalid input: collectedMineralsInGame is not an object or contains invalid values.", { collectedMineralsInGame }); // Оставляем: Ошибка валидации
+    return res.status(400).json({ error: "Invalid input: collectedMineralsInGame must be a non-negative object." });
+  }
+
+  // Удаляем: console.log("[API updateCoins] Input validation passed.");
+
   try {
+    // Удаляем: console.log("[API updateCoins] Connecting to DB...");
     await connectToDatabase();
+    // Удаляем: console.log("[API updateCoins] DB Connected. Finding user by telegramId:", session.user.telegramId);
 
-    try {
-      // Приводим результат к IUser | null
-      const user = await UserModel.findOne({ telegramId: session.user.telegramId }).exec() as IUser | null;
+    const user = await UserModel.findOne({ telegramId: telegramIdNum }).exec() as IUser | null;
 
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      // Обеспечиваем наличие Map перед использованием get/set для TypeScript
-      // Несмотря на default в схеме, это хорошая практика для работы с существующими данными
-      user.boosts = user.boosts || new Map<string, number>();
-      user.collectedMinerals = user.collectedMinerals || new Map<string, number>();
-
-      // Deduct boosts
-      for (const boostId in boostsUsed) {
-        if (boostsUsed[boostId] > 0) {
-          const currentBoostCount = user.boosts.get(boostId) || 0;
-          if (currentBoostCount < boostsUsed[boostId]) {
-            return res.status(400).json({ error: `Insufficient boosts for ${boostId}` });
-          }
-          user.boosts.set(boostId, currentBoostCount - boostsUsed[boostId]);
-        }
-      }
-
-      // Increment coins
-      user.coins = (user.coins || 0) + amount;
-
-      // Update collected minerals
-      if (collectedMineralsInGame) {
-        for (const symbol in collectedMineralsInGame) {
-          const countInGame = collectedMineralsInGame[symbol];
-          if (countInGame > 0) {
-            const currentCount = user.collectedMinerals.get(symbol) || 0;
-            user.collectedMinerals.set(symbol, currentCount + countInGame);
-          }
-        }
-      }
-
-      await user.save();
-      
-      // Преобразуем Map в обычные объекты для JSON ответа
-      const boostsToReturn = Object.fromEntries(user.boosts);
-      const collectedMineralsToReturn = Object.fromEntries(user.collectedMinerals);
-
-      return res.status(200).json({
-        message: "Game data updated successfully",
-        boosts: boostsToReturn,
-        coins: user.coins,
-        collectedMinerals: collectedMineralsToReturn 
-      });
-    } catch (error) {
-      console.error("Error during database operations:", error);
-      return res.status(500).json({ error: "Failed to update game data" });
+    if (!user) {
+      console.error("[API updateCoins] User not found with telegramId:", telegramIdNum); // Оставляем
+      return res.status(404).json({ error: "User not found" });
     }
+
+    // Удаляем: console.log("[API updateCoins] User found. Current coins:", user.coins);
+    // Удаляем: console.log("[API updateCoins] Current user.collectedMinerals (before update):", user.collectedMinerals);
+
+    user.boosts = user.boosts || new Map<string, number>();
+    user.collectedMinerals = user.collectedMinerals || new Map<string, number>();
+    // Удаляем: console.log("[API updateCoins] User boosts and minerals maps ensured."); // Удаляем: Детали пользователя
+
+    // Deduct boosts
+    if (boostsUsed && Object.keys(boostsUsed).length > 0) {
+      // Удаляем: console.log("[API updateCoins] Processing boostsUsed:", boostsUsed); // Удаляем: Детали обработки
+      if (!(user.boosts instanceof Map)) {
+        console.warn("[API updateCoins] user.boosts is not a Map. Initializing as new Map."); // Оставляем
+        user.boosts = new Map();
+      }
+      for (const boostId in boostsUsed) {
+        if (Object.prototype.hasOwnProperty.call(boostsUsed, boostId)) {
+          const quantityUsed = boostsUsed[boostId];
+          if (typeof quantityUsed === 'number' && quantityUsed > 0) {
+            const currentBoostCount = user.boosts.get(boostId) || 0;
+            // Удаляем: console.log(`[API updateCoins] Boost ${boostId}: current count ${currentBoostCount}, used ${quantityUsed}`); // Удаляем: Детали буста
+            if (currentBoostCount >= quantityUsed) {
+              user.boosts.set(boostId, currentBoostCount - quantityUsed);
+              // Удаляем: console.log(`[API updateCoins] Boost ${boostId} new count: ${user.boosts.get(boostId)}`); // Удаляем: Детали буста
+            } else {
+              console.warn(`[API updateCoins] Attempted to use ${quantityUsed} of boost ${boostId}, but user only has ${currentBoostCount}. Setting to 0.`); // Оставляем
+              user.boosts.set(boostId, 0);
+            }
+          }
+        }
+      }
+      // Удаляем: console.log("[API updateCoins] User boosts updated:", user.boosts); // Удаляем: Детали пользователя
+    } else {
+      // Удаляем: console.log("[API updateCoins] No boosts were used or boostsUsed is empty."); // Удаляем: Детали обработки
+    }
+
+    // Increment coins
+    const oldCoins = user.coins || 0;
+    user.coins = oldCoins + score;
+    // Удаляем: console.log("[API updateCoins] User coins updated to:", user.coins); // Удаляем: Детали обновления
+
+    // Update collected minerals
+    if (collectedMineralsInGame && typeof collectedMineralsInGame === 'object' && Object.keys(collectedMineralsInGame).length > 0) {
+      // Удаляем: console.log("[API updateCoins] Processing collectedMineralsInGame:", collectedMineralsInGame); // Удаляем: Детали обработки
+      if (!(user.collectedMinerals instanceof Map)) {
+        console.warn("[API updateCoins] user.collectedMinerals is not a Map. Initializing as new Map. Current type:", typeof user.collectedMinerals, "Value:", user.collectedMinerals); // Оставляем
+        user.collectedMinerals = new Map<string, number>();
+      }
+      for (const symbol in collectedMineralsInGame) {
+        if (Object.prototype.hasOwnProperty.call(collectedMineralsInGame, symbol)) {
+          const count = collectedMineralsInGame[symbol];
+          if (typeof count === 'number' && count > 0) {
+            const currentCount = user.collectedMinerals.get(symbol) || 0;
+            user.collectedMinerals.set(symbol, currentCount + count);
+            // Удаляем: console.log(`[API updateCoins] Updated mineral ${symbol}: old count ${currentCount}, added ${count}, new count ${user.collectedMinerals.get(symbol)}`); // Удаляем: Детали обновления минерала
+          } else {
+            // Можно оставить: console.warn(`[API updateCoins] Invalid count for mineral ${symbol}: ${count}. Skipping.`); // Можно оставить, если часто такое бывает
+          }
+        }
+      }
+      // Удаляем: console.log("[API updateCoins] User collectedMinerals updated:", user.collectedMinerals); // Удаляем: Детали пользователя
+    } else {
+      // Удаляем: console.log("[API updateCoins] No new minerals collected or collectedMineralsInGame is empty."); // Удаляем: Детали обработки
+    }
+
+    await user.save();
+    console.log("[API updateCoins] User data saved successfully."); // Изменено: убран ID из лога
+
+    const boostsToReturn = (user.boosts && user.boosts instanceof Map && user.boosts.size > 0)
+        ? Object.fromEntries(user.boosts)
+        : {};
+
+    let responseCollectedMinerals = {};
+    if (user.collectedMinerals && user.collectedMinerals instanceof Map) {
+        if (user.collectedMinerals.size > 0) {
+            responseCollectedMinerals = Object.fromEntries(user.collectedMinerals);
+        }
+    } else if (user.collectedMinerals) {
+        console.warn(
+            `[API updateCoins] user.collectedMinerals was found post-save but is not a Map. Type: ${typeof user.collectedMinerals}, Value:`,
+            user.collectedMinerals
+        );
+    }
+    // Удаляем: console.log("[API updateCoins] Prepared response data. Coins:", user.coins, "Boosts:", boostsToReturn, "Minerals:", responseCollectedMinerals); // Удаляем: Детали ответа
+
+    return res.status(200).json({
+      message: "Game data updated successfully",
+      boosts: boostsToReturn,
+      coins: user.coins,
+      collectedMinerals: responseCollectedMinerals 
+    });
   } catch (error) {
-    console.error("Error handling request:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error during database operations:", error);
+    return res.status(500).json({ error: "Failed to update game data" });
   }
 }

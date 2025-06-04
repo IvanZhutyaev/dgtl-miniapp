@@ -7,6 +7,11 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    { pattern: /grid-cols-18/ },
+    { pattern: /grid-cols-15/ },
+    // Add any other specific grid column counts you anticipate needing
+  ],
   theme: {
     extend: {
       fontFamily: {

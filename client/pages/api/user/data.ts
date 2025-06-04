@@ -63,10 +63,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<LeanUser | { message: string }>
 ) {
-  console.log("[API /user/data] Received request for /api/user/data"); // Новый лог
+  console.log("[API /user/data] Received request for /api/user/data");
   const session: Session | null = await getServerSession(req, res, authOptions);
 
-  // Подробное логирование объекта сессии
   console.log("[API /user/data] Session object:", JSON.stringify(session, null, 2));
 
   if (!session?.user?.telegramId) {
@@ -75,10 +74,10 @@ export default async function handler(
   }
 
   const telegramIdFromSession = session.user.telegramId;
-  console.log(`[API /user/data] Extracted telegramId from session: ${telegramIdFromSession}, type: ${typeof telegramIdFromSession}`); // Новый лог
+  console.log(`[API /user/data] Extracted telegramId from session: ${telegramIdFromSession}, type: ${typeof telegramIdFromSession}`);
 
   const telegramIdNum = parseInt(telegramIdFromSession, 10);
-  console.log(`[API /user/data] Parsed telegramId to number: ${telegramIdNum}, type: ${typeof telegramIdNum}`); // Новый лог
+  console.log(`[API /user/data] Parsed telegramId to number: ${telegramIdNum}, type: ${typeof telegramIdNum}`);
 
   if (isNaN(telegramIdNum)) {
     console.error(`[API /user/data] Invalid telegramId: ${telegramIdFromSession} resulted in NaN after parseInt.`);
@@ -86,63 +85,35 @@ export default async function handler(
   }
 
   try {
-    // console.log("[API /user/data] Connecting to DB...");
     await connectToDatabase();
-    // console.log("[API /user/data] DB Connected.");
     
-    console.log(`[API /user/data] Mongoose connection state: ${mongoose.connection.readyState}`); // Лог состояния соединения
-    console.log(`[API /user/data] ПЕРЕД ЗАПРОСОМ (упрощенным): Ищем telegramId: ${telegramIdNum} (тип: ${typeof telegramIdNum}) с использованием UserModel`);
+    console.log(`[API /user/data] Mongoose connection state: ${mongoose.connection.readyState}`);
+    console.log(`[API /user/data] ПЕРЕД ЗАПРОСОМ: Ищем telegramId: ${telegramIdNum} (тип: ${typeof telegramIdNum}) с использованием UserModel.lean()`);
 
-    let rawUserData = null;
-    try {
-      rawUserData = await UserModel.findOne({ telegramId: telegramIdNum });
-    } catch (dbQueryError) {
-      console.error(`[API /user/data] ОШИБКА непосредственно при UserModel.findOne:`, dbQueryError);
-      // Используем type assertion для dbQueryError.message
-      return res.status(500).json({ message: `Database query failed: ${(dbQueryError as Error).message}` });
-    }
+    // Use .lean() and type assertion for LeanUser
+    const userDocument = await UserModel.findOne({ telegramId: telegramIdNum }).lean<LeanUser>();
     
-    console.log(`[API /user/data] ПОСЛЕ ЗАПРОСА (упрощенного): Результат UserModel.findOne (сырой): ${JSON.stringify(rawUserData, null, 2)}`);
+    console.log(`[API /user/data] ПОСЛЕ ЗАПРОСА: Результат UserModel.findOne().lean(): ${JSON.stringify(userDocument, null, 2)}`);
 
-    // ВЕСЬ ОСТАЛЬНОЙ КОД ОБРАБОТКИ И ВОЗВРАТА ДАННЫХ ПОКА ЗАКОММЕНТИРОВАН ДЛЯ ТЕСТА
-    /*
-    console.log('[API /user/data] Raw user data from DB (with explicit select):', JSON.stringify(userData, null, 2));
-
-    if (!userData) {
-      // Возвращаем 404, если пользователь не найден, с правильным форматом сообщения
+    if (!userDocument) {
       console.log(`[API /user/data] User not found in DB with telegramId: ${telegramIdNum}`); 
       return res.status(404).json({ message: 'User not found' });
     }
 
-    let processedCollectedMinerals: Record<string, number> = userData.collectedMinerals || {};
+    // Process collectedMinerals if it's a Map (lean() should handle this for simple Maps to objects)
+    // However, the LeanUser type definition anticipates collectedMinerals and boosts as Record<string, number>
+    // So, direct usage should be fine if the schema matches.
+    // For safety, ensure that if they were complex Maps, they are correctly transformed.
+    // .lean() typically converts simple string-keyed Maps to plain objects.
 
-    if (userData.collectedMinerals && userData.collectedMinerals instanceof Map) {
-        console.warn('[API /user/data] userData.collectedMinerals was unexpectedly a Map after .lean(), converting.');
-        processedCollectedMinerals = Object.fromEntries(userData.collectedMinerals as any);
-    } else if (userData.collectedMinerals && typeof userData.collectedMinerals === 'object') {
-        processedCollectedMinerals = userData.collectedMinerals;
-    }
+    // The LeanUser interface expects dates to potentially be strings if they come from JSON,
+    // but .lean() from Mongoose should keep them as Date objects if not stringified yet.
+    // The final res.status(200).json(userDocument) will stringify Dates to ISO strings.
 
-    const responseData = {
-      ...userData, 
-      collectedMinerals: processedCollectedMinerals,
-    };
-    console.log('[API /user/data] Processed response data to be sent:', JSON.stringify(responseData, null, 2));
+    // Ensure all necessary fields (firstName, username, coins) are present in LeanUser and selected by default (no .select() used here means all fields)
+    console.log(`[API /user/data] Returning userDocument: username='${userDocument.username}', firstName='${userDocument.firstName}', coins='${userDocument.coins}'`);
 
-    return res.status(200).json(responseData);
-    */
-
-    // НОВЫЙ ВРЕМЕННЫЙ ОТВЕТ для теста:
-    if (!rawUserData) {
-      console.log(`[API /user/data] Упрощенный запрос НЕ НАШЕЛ пользователя с telegramId: ${telegramIdNum}`);
-      return res.status(404).json({ message: 'User not found by simplified query (see server logs).' });
-    } else {
-      console.log(`[API /user/data] Упрощенный запрос НАШЕЛ пользователя. ID: ${rawUserData._id}. Данные в логах.`);
-      // Возвращаем простой ответ, соответствующий типу { message: string }
-      return res.status(200).json({ 
-        message: `User found by simplified query. User _id: ${rawUserData._id}. Check server logs for full data.`
-      });
-    }
+    return res.status(200).json(userDocument);
 
   } catch (error) {
     console.error('Error in /api/user/data (внешний try-catch):', error);

@@ -18,13 +18,15 @@ const Index = () => {
   const [levels, setLevels] = useState<ILevel[]>([]);
   const [loading, setLoading] = useState(true);
 
+  console.log('[Index Page Render] Status:', status, 'Loading State:', loading, 'UserData:', userData ? `${userData.username}/${userData.firstName}` : 'null');
+
   const fetchLevels = useCallback(async () => {
+    console.log('[Index Page] fetchLevels called');
     setLoading(true);
     try {
       const response = await axios.get('/api/leveldata');
       let levelsData = response.data;
       console.log('[Client Index Page] Fetched levels data for UI:', JSON.stringify(levelsData, null, 2));
-      // Аккуратно дополняем до 13 уровней
       if (levelsData.length < 13) {
         const filled = [...levelsData];
         for (let i = levelsData.length; i < 13; i++) {
@@ -39,22 +41,25 @@ const Index = () => {
         levelsData = filled;
       }
       setLevels(levelsData);
+      console.log('[Index Page] fetchLevels success');
     } catch (error) {
       console.error('Error fetching levels:', error);
       toast.error('Could not load levels.');
-      setLevels([]); // Устанавливаем пустой массив в случае ошибки
+      setLevels([]);
     } finally {
-      setLoading(false);
+      console.log('[Index Page] fetchLevels finally');
     }
   }, []);
 
   const fetchUserData = useCallback(async () => {
+    console.log('[Index Page] fetchUserData called. Session:', session ? 'exists' : 'null');
     if (session?.user?.telegramId) {
       setLoading(true);
       try {
         const res = await fetch('/api/user/data');
         if (!res.ok) throw new Error('Failed to fetch user data');
         const data = await res.json();
+        console.log('[Index Page] UserData fetched:', data);
         setUserData(data);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -62,19 +67,26 @@ const Index = () => {
         setUserData(null);
       } finally {
         setLoading(false);
+        console.log('[Index Page] fetchUserData finally, setLoading(false)');
       }
     } else {
+      console.log('[Index Page] fetchUserData: No session or telegramId, setLoading(false)');
       setLoading(false);
       setUserData(null);
     }
   }, [session]);
 
   useEffect(() => {
+    console.log('[Index Page] useEffect [status, fetchUserData] triggered. Status:', status);
     if (status === 'authenticated') {
       fetchUserData();
     } else if (status === 'unauthenticated') {
+      console.log('[Index Page] Status unauthenticated, redirecting to /authpage and setLoading(false).');
       setLoading(false);
-      router.replace('/authpage'); // Redirect if unauthenticated
+      router.replace('/authpage');
+    } else if (status === 'loading') {
+      console.log('[Index Page] Session status is loading, ensuring setLoading(true)');
+      setLoading(true);
     }
   }, [status, router, fetchUserData]);
 
@@ -82,7 +94,10 @@ const Index = () => {
     fetchLevels();
   }, [fetchLevels]);
 
+  console.log('[Index Page] PRE-RETURN. Status:', status, 'Loading State:', loading, 'UserData:', userData ? `${userData.username}/${userData.firstName}` : 'null');
+
   if (status === 'loading' || loading) {
+    console.log('[Index Page] Rendering LOADING spinner.');
     return (
       <Layout>
         <Head>
@@ -117,7 +132,7 @@ const Index = () => {
         {/* Main Card */}
         <div className="card bg-neutral shadow-xl mb-3">
           <div className="card-body text-white p-4">
-            <h2 className="card-title text-2xl">{session?.user.username || 'Unknown User'}</h2>
+            <h2 className="card-title text-2xl">{userData?.username || userData?.firstName || 'Player'}</h2>
           </div>
         </div>
 

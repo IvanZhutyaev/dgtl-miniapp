@@ -139,22 +139,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Удаляем: console.log("[API updateCoins] No new minerals collected or collectedMineralsInGame is empty."); // Удаляем: Детали обработки
     }
 
+    console.log("[API updateCoins] BEFORE SAVE - user.collectedMinerals:", JSON.stringify(Object.fromEntries(user.collectedMinerals || new Map())));
     await user.save();
+    const savedUser = await UserModel.findById(user._id).select('collectedMinerals coins boosts').lean(); // также получаем coins и boosts для полноты ответа
+    console.log("[API updateCoins] AFTER SAVE - user.collectedMinerals FROM DB:", JSON.stringify(savedUser?.collectedMinerals));
     console.log("[API updateCoins] User data saved successfully."); // Изменено: убран ID из лога
 
-    const boostsToReturn = (user.boosts && user.boosts instanceof Map && user.boosts.size > 0)
-        ? Object.fromEntries(user.boosts)
+    // Используем данные из savedUser для формирования ответа, чтобы быть уверенными, что отдаем актуальное состояние из БД
+    const boostsToReturn = savedUser?.boosts && typeof savedUser.boosts === 'object' 
+        ? savedUser.boosts 
         : {};
 
     let responseCollectedMinerals = {};
-    if (user.collectedMinerals && user.collectedMinerals instanceof Map) {
-        if (user.collectedMinerals.size > 0) {
-            responseCollectedMinerals = Object.fromEntries(user.collectedMinerals);
-        }
-    } else if (user.collectedMinerals) {
+    if (savedUser?.collectedMinerals && typeof savedUser.collectedMinerals === 'object') {
+        responseCollectedMinerals = savedUser.collectedMinerals;
+    } else if (savedUser?.collectedMinerals) { // Если это не объект, но существует (маловероятно после lean() для Map)
         console.warn(
-            `[API updateCoins] user.collectedMinerals was found post-save but is not a Map. Type: ${typeof user.collectedMinerals}, Value:`,
-            user.collectedMinerals
+            `[API updateCoins] user.collectedMinerals was found post-save but is not a Map. Type: ${typeof savedUser.collectedMinerals}, Value:`,
+            savedUser.collectedMinerals
         );
     }
     // Удаляем: console.log("[API updateCoins] Prepared response data. Coins:", user.coins, "Boosts:", boostsToReturn, "Minerals:", responseCollectedMinerals); // Удаляем: Детали ответа
@@ -162,7 +164,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       message: "Game data updated successfully",
       boosts: boostsToReturn,
-      coins: user.coins,
+      coins: savedUser?.coins ?? user.coins, // Приоритет savedUser, если есть, иначе старое значение user.coins
       collectedMinerals: responseCollectedMinerals 
     });
   } catch (error) {

@@ -12,6 +12,7 @@ export interface IUser extends Document {
   boosts: {
     [key: string]: number; 
   };
+  collectedMinerals?: Map<string, number>;
   createdAt: Date;
 }
 
@@ -55,6 +56,11 @@ const UserSchema: Schema<IUser> = new Schema<IUser>({
     boost2: { type: Number, default: 0 },
     boost3: { type: Number, default: 0 },
     boost4: { type: Number, default: 0 },
+  },
+  collectedMinerals: {
+    type: Map,
+    of: Number,
+    default: () => new Map(),
   },
   createdAt: {
     type: Date,

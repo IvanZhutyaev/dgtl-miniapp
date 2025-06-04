@@ -14,4 +14,13 @@ html, body {
     @apply font-vg5000;
   }
   
+@layer utilities {
+  .grid-cols-15 {
+    grid-template-columns: repeat(15, minmax(0, 1fr));
+  }
+  .grid-cols-18 {
+    grid-template-columns: repeat(18, minmax(0, 1fr));
+  }
+}
+  
   

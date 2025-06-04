@@ -158,6 +158,7 @@ const GamePage: React.FC = () => {
     collectedValue: number,
     mineralsFromGame: CollectedGameLogicState
   ) => {
+    console.log("[GamePage] handleGameOverCallback triggered. collectedValue:", collectedValue, "mineralsFromGame:", JSON.stringify(mineralsFromGame));
     setTotalCollectedValue(collectedValue); 
     setFinalDetailedCollectedMinerals(mineralsFromGame);
     setFinalScore(collectedValue); 

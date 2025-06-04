@@ -13,7 +13,10 @@ export interface LevelConstant {
     backgroundVideo?: string; // Made optional as it might not be on all server levels
     requiredScore: number;
     duration: number;
-    colorScheme?: { primary: string; secondary: string }; // Made optional
+    spawnInterval: number;
+    minSpeed: number;
+    maxSpeed: number;
+    colorScheme?: { primary: string; secondary: string; accent: string; };
     minerals: MineralConstant[];
     // Ensure all properties from server/constants/levels.js are here
     // If there are other properties, add them.
@@ -26,8 +29,11 @@ const levels: LevelConstant[] = [
         backgroundUrl: "/game/backgrounds/level1.jpg",
         backgroundVideo: "/game/backgrounds/videos/level1_video.mp4",
         requiredScore: 0,
-        duration: 60, 
-        colorScheme: { primary: "#4CAF50", secondary: "#8BC34A" },
+        duration: 60,
+        spawnInterval: 200,
+        minSpeed: 100,
+        maxSpeed: 400,
+        colorScheme: { primary: "#4CAF50", secondary: "#8BC34A", accent: "#4CAF50" },
         minerals: [
             { name: "Бром", symbol: "Br", imageSrc: "/minerals/Br.png", score: 10, frequency: 0.1 },
             { name: "Золото", symbol: "Au", imageSrc: "/minerals/Au.png", score: 100, frequency: 0.01 },
@@ -43,8 +49,11 @@ const levels: LevelConstant[] = [
         backgroundUrl: "/game/backgrounds/level1.jpg",
         backgroundVideo: "/game/backgrounds/videos/level2_video.mp4",
         requiredScore: 1000,
-        duration: 70, 
-        colorScheme: { primary: "#FFC107", secondary: "#FF9800" },
+        duration: 70,
+        spawnInterval: 190,
+        minSpeed: 110,
+        maxSpeed: 410,
+        colorScheme: { primary: "#FFC107", secondary: "#FF9800", accent: "#FFC107" },
         minerals: [
             { name: "Литий", symbol: "Li", imageSrc: "/minerals/Li.png", score: 20, frequency: 0.1 },
             { name: "Натрий", symbol: "Na", imageSrc: "/minerals/Na.png", score: 25, frequency: 0.08 },
@@ -60,7 +69,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level3_video.mp4",
         requiredScore: 2000,
         duration: 75,
-        colorScheme: { primary: "#2196F3", secondary: "#03A9F4" },
+        spawnInterval: 180,
+        minSpeed: 120,
+        maxSpeed: 420,
+        colorScheme: { primary: "#2196F3", secondary: "#03A9F4", accent: "#2196F3" },
         minerals: [
             { name: "Фтор", symbol: "F", imageSrc: "/minerals/F.png", score: 30, frequency: 0.08 },
             { name: "Хлор", symbol: "Cl", imageSrc: "/minerals/Cl.png", score: 25, frequency: 0.09 },
@@ -76,7 +88,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level4_video.mp4",
         requiredScore: 3000,
         duration: 80,
-        colorScheme: { primary: "#9C27B0", secondary: "#673AB7" },
+        spawnInterval: 170,
+        minSpeed: 130,
+        maxSpeed: 430,
+        colorScheme: { primary: "#9C27B0", secondary: "#673AB7", accent: "#9C27B0" },
         minerals: [
             { name: "Титан", symbol: "Ti", imageSrc: "/minerals/Ti.png", score: 40, frequency: 0.06 },
             { name: "Ванадий", symbol: "V", imageSrc: "/minerals/V.png", score: 45, frequency: 0.05 },
@@ -92,7 +107,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level5_video.mp4",
         requiredScore: 4000,
         duration: 85,
-        colorScheme: { primary: "#E91E63", secondary: "#F06292" },
+        spawnInterval: 160,
+        minSpeed: 140,
+        maxSpeed: 440,
+        colorScheme: { primary: "#E91E63", secondary: "#F06292", accent: "#E91E63" },
         minerals: [
             { name: "Лантан", symbol: "La", imageSrc: "/minerals/La.png", score: 50, frequency: 0.05 },
             { name: "Церий", symbol: "Ce", imageSrc: "/minerals/Ce.png", score: 55, frequency: 0.04 },
@@ -108,7 +126,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level6_video.mp4",
         requiredScore: 5000,
         duration: 90,
-        colorScheme: { primary: "#795548", secondary: "#8D6E63" },
+        spawnInterval: 150,
+        minSpeed: 150,
+        maxSpeed: 450,
+        colorScheme: { primary: "#795548", secondary: "#8D6E63", accent: "#795548" },
         minerals: [
             { name: "Актиний", symbol: "Ac", imageSrc: "/minerals/Ac.png", score: 60, frequency: 0.04 },
             { name: "Торий", symbol: "Th", imageSrc: "/minerals/Th.png", score: 65, frequency: 0.03 },
@@ -124,7 +145,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level7_video.mp4",
         requiredScore: 6000,
         duration: 95,
-        colorScheme: { primary: "#009688", secondary: "#4DB6AC" },
+        spawnInterval: 140,
+        minSpeed: 160,
+        maxSpeed: 460,
+        colorScheme: { primary: "#009688", secondary: "#4DB6AC", accent: "#009688" },
         minerals: [
             { name: "Бор", symbol: "B", imageSrc: "/minerals/B.png", score: 30, frequency: 0.07 },
             { name: "Алюминий", symbol: "Al", imageSrc: "/minerals/Al.png", score: 25, frequency: 0.08 },
@@ -140,7 +164,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level8_video.mp4",
         requiredScore: 7000,
         duration: 100,
-        colorScheme: { primary: "#FF5722", secondary: "#FF8A65" },
+        spawnInterval: 130,
+        minSpeed: 170,
+        maxSpeed: 470,
+        colorScheme: { primary: "#FF5722", secondary: "#FF8A65", accent: "#FF5722" },
         minerals: [
             { name: "Бериллий", symbol: "Be", imageSrc: "/minerals/Be.png", score: 40, frequency: 0.06 },
             { name: "Магний", symbol: "Mg", imageSrc: "/minerals/Mg.png", score: 30, frequency: 0.07 },
@@ -156,7 +183,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level9_video.mp4",
         requiredScore: 8000,
         duration: 105,
-        colorScheme: { primary: "#607D8B", secondary: "#78909C" },
+        spawnInterval: 120,
+        minSpeed: 180,
+        maxSpeed: 480,
+        colorScheme: { primary: "#607D8B", secondary: "#78909C", accent: "#607D8B" },
         minerals: [
             { name: "Галлий", symbol: "Ga", imageSrc: "/minerals/Ga.png", score: 50, frequency: 0.05 },
             { name: "Индий", symbol: "In", imageSrc: "/minerals/In.png", score: 55, frequency: 0.04 },
@@ -172,7 +202,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level10_video.mp4",
         requiredScore: 9000,
         duration: 110,
-        colorScheme: { primary: "#FFEB3B", secondary: "#FFF176" },
+        spawnInterval: 110,
+        minSpeed: 190,
+        maxSpeed: 490,
+        colorScheme: { primary: "#FFEB3B", secondary: "#FFF176", accent: "#FFEB3B" },
         minerals: [
             { name: "Платина", symbol: "Pt", imageSrc: "/minerals/Pt.png", score: 120, frequency: 0.01 },
             { name: "Ртуть", symbol: "Hg", imageSrc: "/minerals/Hg.png", score: 70, frequency: 0.02 },
@@ -188,7 +221,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level11_video.mp4",
         requiredScore: 10000,
         duration: 115,
-        colorScheme: { primary: "#4CAF50", secondary: "#A5D6A7" }, // Similar to basic but lighter
+        spawnInterval: 100,
+        minSpeed: 200,
+        maxSpeed: 500,
+        colorScheme: { primary: "#4CAF50", secondary: "#A5D6A7", accent: "#4CAF50" }, // Similar to basic but lighter
         minerals: [
             { name: "Скандий", symbol: "Sc", imageSrc: "/minerals/Sc.png", score: 60, frequency: 0.03 },
             { name: "Иттрий", symbol: "Y", imageSrc: "/minerals/Y.png", score: 65, frequency: 0.025 },
@@ -204,7 +240,10 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level12_video.mp4",
         requiredScore: 11000,
         duration: 120,
-        colorScheme: { primary: "#F44336", secondary: "#E57373" },
+        spawnInterval: 90,
+        minSpeed: 210,
+        maxSpeed: 510,
+        colorScheme: { primary: "#F44336", secondary: "#E57373", accent: "#F44336" },
         minerals: [
             { name: "Иридий", symbol: "Ir", imageSrc: "/minerals/Ir.png", score: 150, frequency: 0.005 },
             { name: "Осмий", symbol: "Os", imageSrc: "/minerals/Os.png", score: 140, frequency: 0.006 },
@@ -220,11 +259,14 @@ const levels: LevelConstant[] = [
         backgroundVideo: "/game/backgrounds/videos/level13_video.mp4",
         requiredScore: 12000,
         duration: 180,
-        colorScheme: { primary: "#3F51B5", secondary: "#7986CB" },
+        spawnInterval: 80,
+        minSpeed: 220,
+        maxSpeed: 520,
+        colorScheme: { primary: "#3F51B5", secondary: "#7986CB", accent: "#3F51B5" },
         minerals: [ // A mix of various valuable/common/representative minerals
             { name: "Золото", symbol: "Au", imageSrc: "/minerals/Au.png", score: 100, frequency: 0.01 },
             { name: "Платина", symbol: "Pt", imageSrc: "/minerals/Pt.png", score: 120, frequency: 0.008 },
-            { name: "Углерод", symbol: "C", imageSrc: "/minerals/C.png", score: 20, frequency: 0.05 }, // Diamond form
+            { name: "Углерод", symbol: "C", imageSrc: "/minerals/C.png", score: 20, frequency: 0.05 },
             { name: "Титан", symbol: "Ti", imageSrc: "/minerals/Ti.png", score: 40, frequency: 0.04 },
             { name: "Неон", symbol: "Ne", imageSrc: "/minerals/Ne.png", score: 40, frequency: 0.03 },
             { name: "Литий", symbol: "Li", imageSrc: "/minerals/Li.png", score: 20, frequency: 0.06 },

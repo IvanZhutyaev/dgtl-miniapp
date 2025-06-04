@@ -5,6 +5,7 @@ export class ImageEntity {
     ypos: number;
     image: HTMLImageElement;
     speed: number;
+    symbol: string;
     width: number = 50;
     height: number = 50;
     points: number;
@@ -15,13 +16,14 @@ export class ImageEntity {
     isCollected: boolean = false;
     trail: { x: number; y: number; alpha: number }[] = [];
 
-    constructor(xpos: number, ypos: number, imageSrc: string, speed: number, points: number) {
+    constructor(xpos: number, ypos: number, imageSrc: string, speed: number, points: number, symbol: string) {
         this.xpos = xpos;
         this.ypos = ypos;
         this.image = new Image();
         this.image.src = imageSrc;
         this.speed = speed;
         this.points = points;
+        this.symbol = symbol;
         this.rotationSpeed = Math.random() * (MAX_ROTATION_SPEED - MIN_ROTATION_SPEED) + MIN_ROTATION_SPEED;
     }
 

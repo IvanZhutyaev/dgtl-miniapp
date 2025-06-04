@@ -1,5 +1,4 @@
-import { useRouter } from "next/router";
-
+import { useRouter } from "next/router"; 
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
@@ -14,7 +13,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       {/* Tab Navigation */}
       <div
         role="tablist"
-        className="fixed bottom-0 left-0 right-0 tabs tabs-boxed p-3"
+        className="fixed bottom-0 left-0 right-0 tabs tabs-boxed p-3 z-30"
       >
         <a
           role="tab"

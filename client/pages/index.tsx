@@ -2,10 +2,13 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Layout from '../components/layout';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { IUser } from '../models/User';
 import { ILevel } from '../models/Level';
 import ChemicalBadge from '../components/ChemicalBadge';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import Head from 'next/head';
 
 const Index = () => {
   const { data: session, status } = useSession();
@@ -15,8 +18,39 @@ const Index = () => {
   const [levels, setLevels] = useState<ILevel[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
+  const fetchLevels = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('/api/leveldata');
+      let levelsData = response.data;
+      console.log('[Client Index Page] Fetched levels data for UI:', JSON.stringify(levelsData, null, 2));
+      // Аккуратно дополняем до 13 уровней
+      if (levelsData.length < 13) {
+        const filled = [...levelsData];
+        for (let i = levelsData.length; i < 13; i++) {
+          filled.push({
+            name: `Level ${i+1}`,
+            badges: [],
+            backgroundUrl: '',
+            order: i+1,
+            availability: false
+          });
+        }
+        levelsData = filled;
+      }
+      setLevels(levelsData);
+    } catch (error) {
+      console.error('Error fetching levels:', error);
+      toast.error('Could not load levels.');
+      setLevels([]); // Устанавливаем пустой массив в случае ошибки
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchUserData = useCallback(async () => {
+    if (session?.user?.telegramId) {
+      setLoading(true);
       try {
         const res = await fetch('/api/user/data');
         if (!res.ok) throw new Error('Failed to fetch user data');
@@ -24,70 +58,62 @@ const Index = () => {
         setUserData(data);
       } catch (error) {
         console.error('Error fetching user data:', error);
-      } 
-    };
-
-    const fetchLevels = async () => {
-      try {
-        const res = await fetch('/api/leveldata');
-        if (!res.ok) throw new Error('Failed to fetch levels');
-        let data = await res.json();
-        // Аккуратно дополняем до 13 уровней
-        if (data.length < 13) {
-          const filled = [...data];
-          for (let i = data.length; i < 13; i++) {
-            filled.push({
-              name: `Level ${i+1}`,
-              badges: [],
-              backgroundUrl: '',
-              order: i+1,
-              availability: false
-            });
-          }
-          data = filled;
-        }
-        setLevels(data);
-      } catch (error) {
-        console.error('Error fetching levels:', error);
-      } 
-    };
-
-    const initData = async () => {
-      if (status === 'authenticated') {
-        await Promise.all([fetchUserData(), fetchLevels()]);
+        toast.error('Could not load user data.');
+        setUserData(null);
+      } finally {
         setLoading(false);
-      } else if (status === 'unauthenticated') {
-        setLoading(false);
-        router.replace('/authpage'); // Redirect if unauthenticated
       }
-    };
+    } else {
+      setLoading(false);
+      setUserData(null);
+    }
+  }, [session]);
 
-    initData();
-  }, [status, router]);
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchUserData();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+      router.replace('/authpage'); // Redirect if unauthenticated
+    }
+  }, [status, router, fetchUserData]);
+
+  useEffect(() => {
+    fetchLevels();
+  }, [fetchLevels]);
 
   if (status === 'loading' || loading) {
     return (
       <Layout>
-      <div className="flex items-center justify-center h-screen w-screen bg-base-100">
-        <div className="loading loading-spinner loading-lg mb-4"></div>
-      </div>
+        <Head>
+          <title>Home | DGTL P2E Game</title>
+        </Head>
+        <div className="flex items-center justify-center h-screen w-screen bg-base-100">
+          <div className="loading loading-spinner loading-lg mb-4"></div>
+        </div>
       </Layout>
     );
   }
 
   if (!userData) {
     return (
-
-      <div className="flex items-center justify-center h-screen w-screen bg-base-100">
-        <p className="text-lg text-red-500">Failed to load user data. Please try again.</p>
-      </div>
-      
+      <Layout>
+        <Head>
+          <title>Home | DGTL P2E Game</title>
+        </Head>
+        <div className="flex items-center justify-center h-screen w-screen bg-base-100">
+          <p className="text-lg text-red-500">Failed to load user data. Please try again.</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="flex flex-col min-h-screen p-3">
+      <Head>
+        <title>Home | DGTL P2E Game</title>
+      </Head>
+      <div className="container mx-auto px-4 py-8 pb-24">
         {/* Main Card */}
         <div className="card bg-neutral shadow-xl mb-3">
           <div className="card-body text-white p-4">
@@ -99,7 +125,7 @@ const Index = () => {
         <div className="stats bg-neutral text-primary-content">
           <div className="stat">
             <div className="stat-title">Account balance</div>
-            <div className="stat-value text-white text-3xl">{userData.coins} GTL</div>
+            <div className="stat-value text-white text-3xl">{typeof userData.coins === 'number' ? userData.coins.toFixed(2) : userData.coins} GTL</div>
           </div>
           <div className="stat">
             <div className="stat-title">Level</div>
@@ -152,7 +178,9 @@ const Index = () => {
               </div>
             ))
           ) : (
-            <p>No levels available.</p>
+            <div className="text-center py-10">
+              <p className="text-xl text-gray-500">No levels available at the moment. Please check back later.</p>
+            </div>
           )}
 
           </div>

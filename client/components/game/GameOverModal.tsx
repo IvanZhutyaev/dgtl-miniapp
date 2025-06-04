@@ -22,7 +22,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({
         <h3 className="font-bold text-2xl mb-4">Game Over!</h3>
         
         <div className="mb-4">
-          <p className="text-xl">Total Value: {totalCollectedValue}</p>
+          <p className="text-xl">Total Value: {totalCollectedValue} GTL</p>
         </div>
 
         <div className="mb-4">
@@ -32,6 +32,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({
               <div key={mineral} className="flex items-center justify-between p-2 bg-base-200 rounded">
                 <span>{mineral}</span>
                 <span className="font-bold">{count}</span>
+                
               </div>
             ))}
           </div>

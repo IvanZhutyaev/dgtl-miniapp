@@ -6,16 +6,11 @@ const userSchema = new mongoose.Schema({
   lastName: { type: String, default: '' },
   username: { type: String, default: '' },
   coins: { type: Number, default: 0 },
-  boosts: { type: Map, of: Number, default: {} },
+  boosts: { type: Map, of: Number, default: () => new Map() },
+  collectedMinerals: { type: Map, of: Number, default: () => new Map() },
   lastGamePlayed: { type: Date, default: null },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+}, {
+  timestamps: true // Автоматически добавляет и управляет createdAt и updatedAt
 });
 
-// Обновляем updatedAt перед каждым сохранением
-userSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
-});
-
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

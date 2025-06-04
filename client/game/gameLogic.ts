@@ -2,10 +2,10 @@ import { ImageEntity } from "./entities/ImageEntity";
 import { MINERALS as DEFAULT_MINERALS, GAME_DURATION as DEFAULT_GAME_DURATION, SPAWN_INTERVAL as DEFAULT_SPAWN_INTERVAL, BASE_HEIGHT, MIN_SPEED as DEFAULT_MIN_SPEED, MAX_SPEED as DEFAULT_MAX_SPEED } from "./constants/gameData";
 import { getRandomMineral } from "./utils/helper";
 import { LevelConfig } from "./constants/levels";
-import { MINERALS } from "./constants/minerals";
+import { MineralInfo, MINERALS as ALL_MINERALS } from "./constants/minerals";
 
 interface CollectedMinerals {
-    [imageSrc: string]: {
+    [mineralSymbol: string]: {
         count: number;
         value: number; 
         totalPoints: number; 
@@ -38,7 +38,7 @@ export class Game {
     private collectedMinerals: CollectedMinerals = {};
 
     private level?: LevelConfig;
-    private mineralsPool: any[];
+    private mineralsPool: MineralInfo[] = [];
     private spawnInterval: number;
     private minSpeed: number;
     private maxSpeed: number;
@@ -47,8 +47,14 @@ export class Game {
     private onScoreUpdate?: (score: number) => void;
     private onTimeLeftUpdate?: (timeLeft: number) => void;
     private onGameOver?: (totalCollectedValue: number, collectedMinerals: CollectedMinerals) => void;
+    private availableElements: MineralInfo[];
 
-    constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks = {}, level?: LevelConfig) {
+    constructor(
+        canvas: HTMLCanvasElement, 
+        callbacks: GameCallbacks = {}, 
+        level?: LevelConfig,
+        availableElementDefs: MineralInfo[] = []
+    ) {
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d")!;
         this.windowWidth = window.innerWidth;
@@ -59,12 +65,25 @@ export class Game {
         this.onGameOver = callbacks.onGameOver;
 
         this.level = level;
-        this.mineralsPool = level
-            ? level.minerals.map(symbol => {
-                const found = MINERALS.find((m: any) => m.symbol === symbol);
-                return found || DEFAULT_MINERALS[0];
-              })
-            : DEFAULT_MINERALS;
+        this.availableElements = availableElementDefs.length > 0 ? availableElementDefs : ALL_MINERALS;
+
+        if (level) {
+            const levelMineralSymbols = new Set(level.minerals);
+            this.mineralsPool = ALL_MINERALS.filter(mineral => levelMineralSymbols.has(mineral.symbol));
+
+            if (this.mineralsPool.length === 0 && level.minerals.length > 0) {
+                console.warn(`Для уровня ${level.id} ('${level.name}') указаны минералы (${level.minerals.join(', ')}), но ни один из них не найден в общем списке MINERALS. Пул спавна будет пуст.`);
+            } else if (level.minerals.length === 0) {
+                console.warn(`Для уровня ${level.id} ('${level.name}') не указаны минералы для спавна (level.minerals пуст). Пул спавна будет пуст.`);
+            }
+        } else if (availableElementDefs.length > 0) {
+            this.mineralsPool = availableElementDefs;
+            console.warn("Игра запущена без конфигурации уровня, используя переданный список доступных элементов.");
+        } else {
+            console.error("В конструктор Game не передана конфигурация уровня и нет списка доступных элементов. Пул минералов будет пуст.");
+            this.mineralsPool = [];
+        }
+        
         this.spawnInterval = level ? level.spawnInterval : DEFAULT_SPAWN_INTERVAL;
         this.minSpeed = level ? level.minSpeed : DEFAULT_MIN_SPEED;
         this.maxSpeed = level ? level.maxSpeed : DEFAULT_MAX_SPEED;
@@ -85,6 +104,14 @@ export class Game {
      */
     private setupCanvas() {
         this.canvas.style.background = this.level ? this.level.background : "#000";
+        if (this.level && this.level.backgroundImage) {
+            this.canvas.style.backgroundImage = `url(${this.level.backgroundImage})`;
+            this.canvas.style.backgroundSize = "cover";
+            this.canvas.style.backgroundPosition = "center";
+            this.canvas.style.backgroundRepeat = "no-repeat";
+        } else {
+            this.canvas.style.backgroundImage = "none";
+        }
         this.canvas.width = this.windowWidth;
         this.canvas.height = this.windowHeight;
     }
@@ -133,20 +160,20 @@ export class Game {
         
         this.score += pointsEarned;
 
-        const imgSrc = entity.image.src;
-        if (!this.collectedMinerals[imgSrc]) {
-            this.collectedMinerals[imgSrc] = {
+        const mineralSymbol = entity.symbol; 
+        if (!this.collectedMinerals[mineralSymbol]) {
+            this.collectedMinerals[mineralSymbol] = {
                 count: 0,
                 value: entity.points,
                 totalPoints: 0,
             };
         }
 
-        this.collectedMinerals[imgSrc].count += 1;
-        this.collectedMinerals[imgSrc].totalPoints += pointsEarned;
+        this.collectedMinerals[mineralSymbol].count += 1;
+        this.collectedMinerals[mineralSymbol].totalPoints += pointsEarned;
 
         if (this.onScoreUpdate) {
-            this.onScoreUpdate(this.score);
+            this.onScoreUpdate(parseFloat(this.score.toFixed(2)));
         }
     }
     
@@ -154,6 +181,10 @@ export class Game {
      * Spawns a new mineral entity at a random position with a random speed.
      */
     private spawnEntity() {
+        if (this.mineralsPool.length === 0) {
+            return; 
+        }
+
         const randomX = Math.random() * (this.windowWidth - 50);
         const speedFactor = this.windowHeight / BASE_HEIGHT;
         
@@ -166,14 +197,21 @@ export class Game {
         
         // Weighted random selection for minerals
         const mineral = this.getWeightedRandomMineral();
-        let imageSrc = ("image" in mineral && typeof mineral.image === "string") ? mineral.image : mineral.src;
-        if (typeof imageSrc !== "string") imageSrc = "";
         
-        const entity = new ImageEntity(randomX, -50, imageSrc, randomSpeed, mineral.points);
+        if (!mineral) {
+            return;
+        }
+
+        let imageSrc = mineral.image; 
+        
+        const entity = new ImageEntity(randomX, -50, imageSrc, randomSpeed, mineral.points, mineral.symbol);
         this.entities.push(entity);
     }
 
-    private getWeightedRandomMineral() {
+    private getWeightedRandomMineral(): MineralInfo | undefined {
+        if (this.mineralsPool.length === 0) {
+            return undefined; 
+        }
         // Calculate weights based on mineral rarity and level
         const weights = this.mineralsPool.map(mineral => {
             const baseWeight = 1;
@@ -265,7 +303,7 @@ export class Game {
     
         // Trigger the game-over callback with the correct total value
         if (this.onGameOver) {
-            this.onGameOver(totalValue, this.collectedMinerals);
+            this.onGameOver(parseFloat(totalValue.toFixed(2)), this.collectedMinerals);
         }
     
         // Clear any running timers

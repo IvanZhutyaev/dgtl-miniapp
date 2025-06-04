@@ -19,7 +19,7 @@ const GameHUD: React.FC<GameHUDProps> = ({ score, timeLeft, boostCards, onBoostC
   return (
     <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center" style={style}>
       <div className="text-2xl font-bold">
-        Score: {score}
+        Score: {score} GTL
       </div>
       <div className="text-2xl font-bold">
         Time: {timeLeft}s

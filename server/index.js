@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const Level = require('./models/Level'); // Снова импортируем модель Level
 
 // Local MongoDB connection string
 const MONGODB_URI = 'mongodb://localhost:27017/dgtl_miniapp';
@@ -19,7 +20,19 @@ mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected successfully'))
+.then(async () => { // <--- Снова делаем колбэк асинхронным
+  console.log('MongoDB connected successfully');
+  // ЗАКОММЕНТИРОВАНО: Принудительная очистка коллекции levels для диагностики
+  /*
+  try {
+    console.log('[SERVER STARTUP] Attempting to delete all documents from levels collection...');
+    const deleteResult = await Level.deleteMany({});
+    console.log(`[SERVER STARTUP] Successfully deleted ${deleteResult.deletedCount} documents from levels collection.`);
+  } catch (deleteErr) {
+    console.error('[SERVER STARTUP] Error deleting documents from levels collection:', deleteErr);
+  }
+  */
+})
 .catch(err => {
   console.error('MongoDB connection error details:', {
     error: err.message,

@@ -1,11 +1,17 @@
 import { getServerSession } from "next-auth/next";
 import UserModel from "../../models/User";
+import { IUser } from "@/types/interfaces";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectToDatabase } from "@/lib/mongodb";
 import { authOptions } from "../api/auth/[...nextauth]";
 
 interface BoostUsage {
   [boostId: string]: number; // e.g., { "boost1": 2, "boost2": 1 }
+}
+
+// Интерфейс для собранных в игре минералов
+interface CollectedMineralsInGame {
+  [symbol: string]: number; 
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,7 +25,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { amount, boostsUsed }: { amount: number; boostsUsed: BoostUsage } = req.body;
+  const { 
+    amount, 
+    boostsUsed, 
+    collectedMineralsInGame 
+  }: { 
+    amount: number; 
+    boostsUsed: BoostUsage; 
+    collectedMineralsInGame?: CollectedMineralsInGame; // <-- Новое поле
+  } = req.body;
 
   // Validate input
   if (
@@ -27,7 +41,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     amount < 0 ||
     typeof boostsUsed !== "object" ||
     !boostsUsed ||
-    !Object.values(boostsUsed).every((v) => typeof v === "number" && v >= 0)
+    !Object.values(boostsUsed).every((v) => typeof v === "number" && v >= 0) ||
+    // Валидация для collectedMineralsInGame (если передано)
+    (collectedMineralsInGame && 
+      (typeof collectedMineralsInGame !== "object" || 
+       !Object.values(collectedMineralsInGame).every(v => typeof v === "number" && v >= 0)))
   ) {
     return res.status(400).json({ message: "Invalid input" });
   }
@@ -35,45 +53,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     await connectToDatabase();
 
-    const sessionDb = await UserModel.startSession();
-    sessionDb.startTransaction();
-
     try {
-      const user = await UserModel.findOne({ telegramId: session.user.telegramId }).session(sessionDb);
+      // Приводим результат к IUser | null
+      const user = await UserModel.findOne({ telegramId: session.user.telegramId }).exec() as IUser | null;
 
       if (!user) {
-        await sessionDb.abortTransaction();
         return res.status(404).json({ error: "User not found" });
       }
 
+      // Обеспечиваем наличие Map перед использованием get/set для TypeScript
+      // Несмотря на default в схеме, это хорошая практика для работы с существующими данными
+      user.boosts = user.boosts || new Map<string, number>();
+      user.collectedMinerals = user.collectedMinerals || new Map<string, number>();
+
       // Deduct boosts
       for (const boostId in boostsUsed) {
-        if (!user.boosts[boostId] || user.boosts[boostId] < boostsUsed[boostId]) {
-          await sessionDb.abortTransaction();
-          return res.status(400).json({ error: `Insufficient boosts for ${boostId}` });
+        if (boostsUsed[boostId] > 0) {
+          const currentBoostCount = user.boosts.get(boostId) || 0;
+          if (currentBoostCount < boostsUsed[boostId]) {
+            return res.status(400).json({ error: `Insufficient boosts for ${boostId}` });
+          }
+          user.boosts.set(boostId, currentBoostCount - boostsUsed[boostId]);
         }
-        user.boosts[boostId] -= boostsUsed[boostId];
       }
 
       // Increment coins
       user.coins = (user.coins || 0) + amount;
 
-      // Save the user document
-      await user.save({ session: sessionDb });
+      // Update collected minerals
+      if (collectedMineralsInGame) {
+        for (const symbol in collectedMineralsInGame) {
+          const countInGame = collectedMineralsInGame[symbol];
+          if (countInGame > 0) {
+            const currentCount = user.collectedMinerals.get(symbol) || 0;
+            user.collectedMinerals.set(symbol, currentCount + countInGame);
+          }
+        }
+      }
 
-      await sessionDb.commitTransaction();
+      await user.save();
+      
+      // Преобразуем Map в обычные объекты для JSON ответа
+      const boostsToReturn = Object.fromEntries(user.boosts);
+      const collectedMineralsToReturn = Object.fromEntries(user.collectedMinerals);
 
       return res.status(200).json({
         message: "Game data updated successfully",
-        boosts: user.boosts,
+        boosts: boostsToReturn,
         coins: user.coins,
+        collectedMinerals: collectedMineralsToReturn 
       });
     } catch (error) {
-      await sessionDb.abortTransaction();
-      console.error("Transaction error:", error);
+      console.error("Error during database operations:", error);
       return res.status(500).json({ error: "Failed to update game data" });
-    } finally {
-      sessionDb.endSession();
     }
   } catch (error) {
     console.error("Error handling request:", error);

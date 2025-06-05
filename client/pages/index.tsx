@@ -170,7 +170,7 @@ const Index = () => {
                     
                     {/* Level background image */}
                     <img
-                      src={level.backgroundUrl || '/default-level-bg.jpg'}
+                      src={level.menuImageUrl || level.backgroundUrl || '/default-level-bg.jpg'}
                       alt={level.name}
                       className="h-[150px] w-full object-cover"
                     />

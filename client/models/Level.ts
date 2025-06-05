@@ -4,6 +4,7 @@ export interface ILevel extends Document {
   name: string;           
   badges: string[];      
   backgroundUrl: string;     
+  menuImageUrl?: string;
   order: number;  
   availability: boolean;      
 }

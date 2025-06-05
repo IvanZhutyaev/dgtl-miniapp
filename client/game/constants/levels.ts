@@ -20,6 +20,9 @@ export interface LevelConfig {
 }
 
 const LEVEL_1_BACKGROUND_IMAGE = "/game/backgrounds/level1.jpg";
+const LEVEL_2_BACKGROUND_IMAGE = "/game/backgrounds/level2.jpg";
+
+
 // const LEVEL_1_BACKGROUND_VIDEO = "/game/backgrounds/videos/level1_video.mp4"; // Keep if you want to also set video for all
 
 export const LEVELS: LevelConfig[] = [
@@ -28,7 +31,7 @@ export const LEVELS: LevelConfig[] = [
     name: "Базовый уровень",
     background: "#181818",
     backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
-    backgroundVideo: "/game/backgrounds/videos/level1_video.mp4",
+    // backgroundVideo: "/game/backgrounds/videos/level1_video.mp4",
     minerals: ["H", "He", "Li", "Be"],
     spawnInterval: 200,
     minSpeed: 100,
@@ -45,7 +48,7 @@ export const LEVELS: LevelConfig[] = [
     id: 2,
     name: "Щелочные металлы",
     background: "#1a1a2e",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["Li", "Na", "K", "Rb", "Cs", "Fr"],
     spawnInterval: 180,
     minSpeed: 120,
@@ -79,7 +82,7 @@ export const LEVELS: LevelConfig[] = [
     id: 4,
     name: "Переходные металлы",
     background: "#2d3142",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn"],
     spawnInterval: 160,
     minSpeed: 140,
@@ -113,7 +116,7 @@ export const LEVELS: LevelConfig[] = [
     id: 6,
     name: "Актиноиды",
     background: "#1b263b",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr"],
     spawnInterval: 140,
     minSpeed: 160,
@@ -147,7 +150,7 @@ export const LEVELS: LevelConfig[] = [
     id: 8,
     name: "Щелочноземельные металлы",
     background: "#5f4bb6",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["Be", "Mg", "Ca", "Sr", "Ba", "Ra"],
     spawnInterval: 120,
     minSpeed: 180,
@@ -181,7 +184,7 @@ export const LEVELS: LevelConfig[] = [
     id: 10,
     name: "Смешанный уровень",
     background: "#ff6f3c",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["H", "O", "Na", "K", "Fe", "Cu", "Ag", "Au", "Pb", "U"],
     spawnInterval: 100,
     minSpeed: 200,
@@ -198,7 +201,7 @@ export const LEVELS: LevelConfig[] = [
     id: 11,
     name: "Редкоземельные элементы",
     background: "#2e294e",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu"],
     spawnInterval: 90,
     minSpeed: 210,
@@ -215,7 +218,7 @@ export const LEVELS: LevelConfig[] = [
     id: 12,
     name: "Супер-редкие",
     background: "#ff206e",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: ["Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"],
     spawnInterval: 80,
     minSpeed: 220,
@@ -232,7 +235,7 @@ export const LEVELS: LevelConfig[] = [
     id: 13,
     name: "Все элементы!",
     background: "#00b894",
-    backgroundImage: LEVEL_1_BACKGROUND_IMAGE,
+    backgroundImage: LEVEL_2_BACKGROUND_IMAGE,
     minerals: MINERALS.map(m => m.symbol),
     spawnInterval: 70,
     minSpeed: 230,

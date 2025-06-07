@@ -101,6 +101,12 @@ npm run install:all
 
 ---
 
+## Выполнено:
+
+- [Жутяев Иван](https://github.com/IvanZhutyaev)
+- [Ломовской Артём](https://github.com/ModderCodder)
+
+---
 ## Лицензия
 
 Проект распространяется под лицензией MIT.

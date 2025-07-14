@@ -10,6 +10,7 @@ export default function SignOut() {
       try {
         // Close Telegram WebApp if available
         if (window.Telegram?.WebApp) {
+		  //@ts-ignore
           window.Telegram.WebApp.close();
         }
         

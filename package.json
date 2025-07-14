@@ -8,7 +8,16 @@
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && PORT=3000 npm run dev",
     "dev:bot": "cd bot && npm run dev",
+	
     "tunnel": "ngrok http 3000",
+
+    "build": "cd client && npm run build",
+
+    "start": "concurrently \"npm:start:server\" \"npm:start:client\" \"npm:start:bot\"",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm start",
+    "start:bot": "cd bot && npm start",
+
     "install:all": "concurrently \"cd server && npm install\" \"cd client && npm install\" \"cd bot && npm install\""
   },
   "keywords": [],
